@@ -7,12 +7,6 @@ before:
     - go mod tidy
 
 builds:
-  - id: banana
-    main: ./cmd/banana
-    binary: banana
-    env: [CGO_ENABLED=0]
-    goos: [linux, darwin, windows]
-    goarch: [amd64, arm64]
   - id: crabs
     main: ./cmd/crabs
     binary: crabs
@@ -25,45 +19,15 @@ builds:
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
-  - id: fanfare
-    main: ./cmd/fanfare
-    binary: fanfare
-    env: [CGO_ENABLED=0]
-    goos: [linux, darwin, windows]
-    goarch: [amd64, arm64]
   - id: fish
     main: ./cmd/fish
     binary: fish
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
-  - id: football
-    main: ./cmd/football
-    binary: football
-    env: [CGO_ENABLED=0]
-    goos: [linux, darwin, windows]
-    goarch: [amd64, arm64]
   - id: garden
     main: ./cmd/garden
     binary: garden
-    env: [CGO_ENABLED=0]
-    goos: [linux, darwin, windows]
-    goarch: [amd64, arm64]
-  - id: giraffe
-    main: ./cmd/giraffe
-    binary: giraffe
-    env: [CGO_ENABLED=0]
-    goos: [linux, darwin, windows]
-    goarch: [amd64, arm64]
-  - id: heft
-    main: ./cmd/heft
-    binary: heft
-    env: [CGO_ENABLED=0]
-    goos: [linux, darwin, windows]
-    goarch: [amd64, arm64]
-  - id: smug
-    main: ./cmd/smug
-    binary: smug
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
@@ -113,5 +77,4 @@ brews:
     license: MIT
     commit_msg_template: "Brew formula update for toolshed {{ .Tag }}"
     install: |
-      bin.install "banana", "crabs", "duck", "fanfare", "fish", "football",
-                  "garden", "giraffe", "heft", "smug", "snail"
+      bin.install "crabs", "duck", "fish", "garden", "snail"
