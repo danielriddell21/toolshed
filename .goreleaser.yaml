@@ -1,0 +1,117 @@
+version: 2
+
+project_name: toolshed
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: banana
+    main: ./cmd/banana
+    binary: banana
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+  - id: crabs
+    main: ./cmd/crabs
+    binary: crabs
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+  - id: duck
+    main: ./cmd/duck
+    binary: duck
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+  - id: fanfare
+    main: ./cmd/fanfare
+    binary: fanfare
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+  - id: fish
+    main: ./cmd/fish
+    binary: fish
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+  - id: football
+    main: ./cmd/football
+    binary: football
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+  - id: garden
+    main: ./cmd/garden
+    binary: garden
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+  - id: giraffe
+    main: ./cmd/giraffe
+    binary: giraffe
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+  - id: heft
+    main: ./cmd/heft
+    binary: heft
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+  - id: smug
+    main: ./cmd/smug
+    binary: smug
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+  - id: snail
+    main: ./cmd/snail
+    binary: snail
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+
+archives:
+  - id: toolshed
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - Merge pull request
+      - Merge branch
+
+release:
+  name_template: "v{{ .Version }}"
+
+brews:
+  - name: toolshed
+    repository:
+      owner: danielriddell21
+      name: homebrew-tap
+      branch: trunk
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Formula
+    homepage: https://github.com/danielriddell21/toolshed
+    description: "A small, serious-looking collection of command-line tools"
+    license: MIT
+    commit_msg_template: "Brew formula update for toolshed {{ .Tag }}"
+    install: |
+      bin.install "banana", "crabs", "duck", "fanfare", "fish", "football",
+                  "garden", "giraffe", "heft", "smug", "snail"
