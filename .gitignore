@@ -1,0 +1,28 @@
+# Build output
+/bin/
+
+# Stray binaries from `go build ./cmd/<name>` in the repo root
+/crabs
+/fish
+/snail
+/garden
+/duck
+/fractal
+/markov
+/maze
+/turing
+/life
+/sandbox
+
+# Generated images from local runs
+*.png
+*.gif
+!docs/img/*.gif
+!docs/img/*.png
+
+# Coverage profiles
+*.out
+coverage.txt
+
+# OS cruft
+.DS_Store
