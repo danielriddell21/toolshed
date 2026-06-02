@@ -1,5 +1,11 @@
 # toolshed
 
+[![CI](https://github.com/danielriddell21/toolshed/actions/workflows/ci.yaml/badge.svg)](https://github.com/danielriddell21/toolshed/actions/workflows/ci.yaml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=danielriddell21_toolshed&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=danielriddell21_toolshed)
+[![codecov](https://codecov.io/gh/danielriddell21/toolshed/graph/badge.svg)](https://codecov.io/gh/danielriddell21/toolshed)
+[![Go 1.26](https://img.shields.io/badge/go-1.26-blue)](https://go.dev)
+[![MIT License](https://img.shields.io/badge/licence-MIT-green)](LICENSE)
+
 A collection of terminal toys and generative tools, written in Go. Fractals you
 can fly through, simulations that paint themselves, a maze solver that shows its
 work, and a handful of small ambient things to leave running in a corner of the
@@ -9,6 +15,12 @@ Eleven binaries, one module, no fuss.
 
 ## Install
 
+### Homebrew
+```sh
+brew install danielriddell21/tap/toolshed
+```
+
+### Go
 ```sh
 go install github.com/danielriddell21/toolshed/cmd/...@latest
 ```
@@ -18,8 +30,6 @@ Or build from a clone:
 ```sh
 go build ./...
 ```
-
-`go install` / `go build` only — no package managers or release tooling required.
 
 ## The tools
 
