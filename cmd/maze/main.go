@@ -143,7 +143,7 @@ func (m model) glyph(x, y int) (string, lipgloss.Style) {
 }
 
 func (m model) View() string {
-	if !m.Size.Ready() {
+	if !m.Ready() {
 		return "Loading the maze...\n"
 	}
 
@@ -154,8 +154,8 @@ func (m model) View() string {
 
 	// Reserve rows for the header (1), blank (1), status (1), help (1).
 	const chrome = 5
-	maxRows := max(m.Size.Height-chrome, 1)
-	maxCols := max(m.Size.Width, 1)
+	maxRows := max(m.Height-chrome, 1)
+	maxCols := max(m.Width, 1)
 	rows := min(m.mz.H, maxRows)
 	cols := min(m.mz.W, maxCols)
 
@@ -230,7 +230,7 @@ func loadMaze(in, generate string, seed int64) (*maze.Maze, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	return maze.Parse(f)
 }
 

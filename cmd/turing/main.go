@@ -127,7 +127,7 @@ func writePNG(path string, img image.Image) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	if err := png.Encode(f, img); err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func writeGIF(path string, g *gif.GIF) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	if err := gif.EncodeAll(f, g); err != nil {
 		return err
 	}

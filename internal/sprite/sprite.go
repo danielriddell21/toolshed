@@ -7,6 +7,7 @@ import "strings"
 // Direction of travel along the x-axis.
 type Direction int
 
+// Facing directions along the x-axis.
 const (
 	Right Direction = 1
 	Left  Direction = -1

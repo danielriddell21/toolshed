@@ -16,6 +16,7 @@ import (
 // Cell is the kind of a single maze square.
 type Cell uint8
 
+// Cell kinds.
 const (
 	Open Cell = iota
 	Wall
@@ -169,6 +170,7 @@ func Generate(w, h int, rng *rand.Rand) *Maze {
 // Algo selects the search algorithm.
 type Algo int
 
+// Search algorithms.
 const (
 	BFS Algo = iota
 	AStar
@@ -189,6 +191,7 @@ func ParseAlgo(s string) (Algo, error) {
 // StepKind classifies an event in the search replay log.
 type StepKind uint8
 
+// Step kinds in the search replay.
 const (
 	Visit StepKind = iota
 	Frontier

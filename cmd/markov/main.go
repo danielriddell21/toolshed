@@ -53,7 +53,7 @@ func main() {
 
 			out := cmd.OutOrStdout()
 			if !stream {
-				fmt.Fprintln(out, markov.Render(tokens))
+				_, _ = fmt.Fprintln(out, markov.Render(tokens))
 				return nil
 			}
 
@@ -61,13 +61,13 @@ func main() {
 			prevOpen := false
 			for i, tok := range tokens {
 				if i > 0 && !isCloser(tok) && !prevOpen {
-					fmt.Fprint(out, " ")
+					_, _ = fmt.Fprint(out, " ")
 				}
-				fmt.Fprint(out, tok)
+				_, _ = fmt.Fprint(out, tok)
 				prevOpen = isOpener(tok)
 				time.Sleep(60 * time.Millisecond)
 			}
-			fmt.Fprintln(out)
+			_, _ = fmt.Fprintln(out)
 			return nil
 		},
 	}

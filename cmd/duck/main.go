@@ -135,7 +135,7 @@ func main() {
 			}
 			m := model{rng: rand.New(rand.NewSource(seed))}
 			_, err := tea.NewProgram(m, tea.WithAltScreen()).Run()
-			fmt.Fprintln(cmd.OutOrStdout(), "the duck watches you go. mhm.")
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "the duck watches you go. mhm.")
 			return err
 		},
 	}
