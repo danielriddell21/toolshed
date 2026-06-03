@@ -113,5 +113,5 @@ brews:
     license: MIT
     commit_msg_template: "Brew formula update for toolshed {{ .Tag }}"
     install: |
-      bin.install "crabs", "duck", "fish", "fractal", "garden", "life", "markov", "maze", "sandbox", "snail", "turing"
-      bin.install_symlink bin/"fish" => "aquarium"
+      bin.install "crabs", "duck", "fractal", "garden", "life", "markov", "maze", "sandbox", "snail", "turing"
+      bin.install "fish" => "aquarium"
