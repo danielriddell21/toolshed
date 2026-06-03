@@ -25,15 +25,51 @@ builds:
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
+  - id: fractal
+    main: ./cmd/fractal
+    binary: fractal
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
   - id: garden
     main: ./cmd/garden
     binary: garden
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
+  - id: life
+    main: ./cmd/life
+    binary: life
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+  - id: markov
+    main: ./cmd/markov
+    binary: markov
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+  - id: maze
+    main: ./cmd/maze
+    binary: maze
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+  - id: sandbox
+    main: ./cmd/sandbox
+    binary: sandbox
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
   - id: snail
     main: ./cmd/snail
     binary: snail
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+  - id: turing
+    main: ./cmd/turing
+    binary: turing
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
@@ -77,4 +113,5 @@ brews:
     license: MIT
     commit_msg_template: "Brew formula update for toolshed {{ .Tag }}"
     install: |
-      bin.install "crabs", "duck", "fish", "garden", "snail"
+      bin.install "crabs", "duck", "fish", "fractal", "garden", "life", "markov", "maze", "sandbox", "snail", "turing"
+      bin.install_symlink bin/"fish" => "aquarium"
