@@ -4,6 +4,8 @@
 package main
 
 import (
+	"github.com/danielriddell21/toolshed/internal/buildinfo"
+
 	"fmt"
 	"math"
 	"math/rand"
@@ -249,6 +251,7 @@ func drawCursor(f *render.Frame, c physics.Vec) {
 }
 
 func main() {
+	buildinfo.HandleVersionFlag()
 	var (
 		gravity     float64
 		restitution float64

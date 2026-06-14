@@ -2,6 +2,8 @@
 package main
 
 import (
+	"github.com/danielriddell21/toolshed/internal/buildinfo"
+
 	"fmt"
 	"math/rand"
 	"os"
@@ -136,6 +138,7 @@ func (m model) View() string {
 func clampF(v, lo, hi float64) float64 { return max(lo, min(hi, v)) }
 
 func main() {
+	buildinfo.HandleVersionFlag()
 	var (
 		still bool
 		seed  int64

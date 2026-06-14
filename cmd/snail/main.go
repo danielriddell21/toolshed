@@ -3,6 +3,8 @@
 package main
 
 import (
+	"github.com/danielriddell21/toolshed/internal/buildinfo"
+
 	"fmt"
 	"os"
 	"strings"
@@ -163,6 +165,7 @@ func (m model) View() string {
 }
 
 func main() {
+	buildinfo.HandleVersionFlag()
 	var (
 		work time.Duration
 		rest time.Duration

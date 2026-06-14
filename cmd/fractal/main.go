@@ -4,6 +4,8 @@
 package main
 
 import (
+	"github.com/danielriddell21/toolshed/internal/buildinfo"
+
 	"fmt"
 	"os"
 	"slices"
@@ -192,6 +194,7 @@ func (m model) View() string {
 }
 
 func main() {
+	buildinfo.HandleVersionFlag()
 	var (
 		palName    string
 		startJulia bool

@@ -5,6 +5,8 @@
 package main
 
 import (
+	"github.com/danielriddell21/toolshed/internal/buildinfo"
+
 	"fmt"
 	"os"
 	"strconv"
@@ -189,6 +191,7 @@ func parseSize(s string) (int, int, error) {
 }
 
 func main() {
+	buildinfo.HandleVersionFlag()
 	var (
 		path  string
 		speed int

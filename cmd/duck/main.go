@@ -3,6 +3,8 @@
 package main
 
 import (
+	"github.com/danielriddell21/toolshed/internal/buildinfo"
+
 	"fmt"
 	"math/rand"
 	"os"
@@ -123,6 +125,7 @@ func (m model) View() string {
 }
 
 func main() {
+	buildinfo.HandleVersionFlag()
 	var seed int64
 	root := &cobra.Command{
 		Use:   "duck",

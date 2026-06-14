@@ -2,6 +2,8 @@
 package main
 
 import (
+	"github.com/danielriddell21/toolshed/internal/buildinfo"
+
 	"fmt"
 	"os"
 	"strings"
@@ -117,6 +119,7 @@ func (m model) View() string {
 }
 
 func main() {
+	buildinfo.HandleVersionFlag()
 	root := &cobra.Command{
 		Use:   "garden",
 		Short: "Rake a zen sand garden",

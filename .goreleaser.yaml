@@ -13,66 +13,77 @@ builds:
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
+    ldflags: [-s -w -X github.com/danielriddell21/toolshed/internal/buildinfo.Version={{ .Version }}]
   - id: duck
     main: ./cmd/duck
     binary: duck
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
+    ldflags: [-s -w -X github.com/danielriddell21/toolshed/internal/buildinfo.Version={{ .Version }}]
   - id: fish
     main: ./cmd/fish
     binary: fish
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
+    ldflags: [-s -w -X github.com/danielriddell21/toolshed/internal/buildinfo.Version={{ .Version }}]
   - id: fractal
     main: ./cmd/fractal
     binary: fractal
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
+    ldflags: [-s -w -X github.com/danielriddell21/toolshed/internal/buildinfo.Version={{ .Version }}]
   - id: garden
     main: ./cmd/garden
     binary: garden
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
+    ldflags: [-s -w -X github.com/danielriddell21/toolshed/internal/buildinfo.Version={{ .Version }}]
   - id: life
     main: ./cmd/life
     binary: life
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
+    ldflags: [-s -w -X github.com/danielriddell21/toolshed/internal/buildinfo.Version={{ .Version }}]
   - id: markov
     main: ./cmd/markov
     binary: markov
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
+    ldflags: [-s -w -X github.com/danielriddell21/toolshed/internal/buildinfo.Version={{ .Version }}]
   - id: maze
     main: ./cmd/maze
     binary: maze
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
+    ldflags: [-s -w -X github.com/danielriddell21/toolshed/internal/buildinfo.Version={{ .Version }}]
   - id: sandbox
     main: ./cmd/sandbox
     binary: sandbox
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
+    ldflags: [-s -w -X github.com/danielriddell21/toolshed/internal/buildinfo.Version={{ .Version }}]
   - id: snail
     main: ./cmd/snail
     binary: snail
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
+    ldflags: [-s -w -X github.com/danielriddell21/toolshed/internal/buildinfo.Version={{ .Version }}]
   - id: turing
     main: ./cmd/turing
     binary: turing
     env: [CGO_ENABLED=0]
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
+    ldflags: [-s -w -X github.com/danielriddell21/toolshed/internal/buildinfo.Version={{ .Version }}]
 
 archives:
   - id: toolshed
@@ -115,3 +126,7 @@ brews:
     install: |
       bin.install "crabs", "duck", "fractal", "garden", "life", "markov", "maze", "sandbox", "snail", "turing"
       bin.install "fish" => "aquarium"
+    test: |
+      %w[crabs duck fractal garden life markov maze sandbox snail turing aquarium].each do |cmd|
+        system "#{bin}/#{cmd}", "--version"
+      end

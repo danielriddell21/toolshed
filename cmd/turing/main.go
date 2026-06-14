@@ -4,6 +4,8 @@
 package main
 
 import (
+	"github.com/danielriddell21/toolshed/internal/buildinfo"
+
 	"fmt"
 	"image"
 	"image/color"
@@ -20,6 +22,7 @@ import (
 )
 
 func main() {
+	buildinfo.HandleVersionFlag()
 	var (
 		preset  string
 		feed    float64

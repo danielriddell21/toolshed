@@ -3,6 +3,8 @@
 package main
 
 import (
+	"github.com/danielriddell21/toolshed/internal/buildinfo"
+
 	"fmt"
 	"math/rand"
 	"os"
@@ -235,6 +237,7 @@ func loadMaze(in, generate string, seed int64) (*maze.Maze, error) {
 }
 
 func main() {
+	buildinfo.HandleVersionFlag()
 	var (
 		in       string
 		algoStr  string

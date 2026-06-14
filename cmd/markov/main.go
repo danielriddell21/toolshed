@@ -2,6 +2,8 @@
 package main
 
 import (
+	"github.com/danielriddell21/toolshed/internal/buildinfo"
+
 	"fmt"
 	"math/rand"
 	"os"
@@ -13,6 +15,7 @@ import (
 )
 
 func main() {
+	buildinfo.HandleVersionFlag()
 	var (
 		in     string
 		order  int
