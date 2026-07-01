@@ -19,8 +19,6 @@ func inBounds(t *testing.T, w *World) {
 	}
 }
 
-// A ball falling straight onto the floor should reverse its Y velocity, scaled
-// down by restitution<1, and stay inside the box.
 func TestWallBounceRestitution(t *testing.T) {
 	const e = 0.5
 	w := NewWorld(100, 100, 500, e)
@@ -54,8 +52,6 @@ func TestWallBounceRestitution(t *testing.T) {
 	}
 }
 
-// Two equal balls colliding head-on (no gravity) should approximately conserve
-// total momentum.
 func TestMomentumConservation(t *testing.T) {
 	w := NewWorld(1000, 1000, 0, 1.0)
 	w.Spawn(Vec{X: 400, Y: 500}, Vec{X: 100, Y: 0}, 10, render.RGB{})
@@ -93,8 +89,6 @@ func TestMomentumConservation(t *testing.T) {
 	}
 }
 
-// Same initial world + same dt sequence must produce identical positions: Step
-// is deterministic and uses no global RNG.
 func TestFixedStepDeterminism(t *testing.T) {
 	build := func() *World {
 		w := NewWorld(300, 200, 300, 0.85)
@@ -115,7 +109,6 @@ func TestFixedStepDeterminism(t *testing.T) {
 	}
 }
 
-// Under gravity for many steps, every ball must remain inside the box.
 func TestNoEscape(t *testing.T) {
 	w := NewWorld(160, 120, 600, 0.9)
 	w.Spawn(Vec{X: 20, Y: 20}, Vec{X: 400, Y: -300}, 5, render.RGB{})

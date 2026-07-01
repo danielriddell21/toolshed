@@ -1,11 +1,3 @@
-// Package physics is a small, deterministic 2D rigid-circle simulation core for
-// the sandbox toy. It models gravity, damped wall bounces, and elastic
-// ball-ball collisions in a bounded box. Everything runs on a fixed timestep so
-// the simulation is stable and reproducible: Step contains no global randomness
-// and the same initial world fed the same dt sequence produces identical state.
-//
-// All coordinates are in "pixel space" (the render.Frame's sub-cell grid). The
-// box spans [0,W] x [0,H] with +Y pointing down, matching the framebuffer.
 package physics
 
 import (
@@ -14,36 +6,26 @@ import (
 	"github.com/danielriddell21/toolshed/internal/render"
 )
 
-// Vec is a 2D vector.
 type Vec struct{ X, Y float64 }
 
-// Ball is a circle with position, velocity, radius, and a draw color. Mass is
-// derived from the radius (mass ∝ R²) during collision resolution.
 type Ball struct {
 	Pos, Vel Vec
 	R        float64
 	Color    render.RGB
 }
 
-// mass returns the ball's mass, proportional to area (R²). Heavier balls shove
-// lighter ones around more, which reads better than equal mass.
 func (b Ball) mass() float64 { return b.R * b.R }
 
-// World holds the simulation bounds, forces, and the live set of balls.
 type World struct {
-	W, H        float64 // box bounds in pixel space
-	Gravity     Vec     // acceleration applied each step
-	Restitution float64 // [0,1] fraction of normal speed retained on bounce
-	Damping     float64 // velocity multiplier per step (air drag); 0 means "none"
+	W, H        float64
+	Gravity     Vec
+	Restitution float64
+	Damping     float64
 	Balls       []Ball
 }
 
-// tangentialDamping is the fraction of tangential (along-wall) velocity retained
-// after a wall bounce, so balls gradually settle instead of sliding forever.
 const tangentialDamping = 0.98
 
-// NewWorld returns a world sized w by h with downward gravity of the given
-// magnitude and the given restitution. Damping defaults to off (1.0).
 func NewWorld(w, h float64, gravity, restitution float64) *World {
 	return &World{
 		W:           w,
@@ -54,7 +36,6 @@ func NewWorld(w, h float64, gravity, restitution float64) *World {
 	}
 }
 
-// Spawn adds a ball clamped so it starts fully inside the box.
 func (w *World) Spawn(pos, vel Vec, r float64, c render.RGB) {
 	r = max(r, 1)
 	pos.X = clamp(pos.X, r, w.W-r)
@@ -62,15 +43,10 @@ func (w *World) Spawn(pos, vel Vec, r float64, c render.RGB) {
 	w.Balls = append(w.Balls, Ball{Pos: pos, Vel: vel, R: r, Color: c})
 }
 
-// Clear removes every ball, keeping the slice's capacity for reuse.
 func (w *World) Clear() { w.Balls = w.Balls[:0] }
 
-// ToggleGravity flips the vertical gravity direction.
 func (w *World) ToggleGravity() { w.Gravity.Y = -w.Gravity.Y }
 
-// Step advances the simulation by one fixed timestep dt. It integrates motion,
-// resolves wall collisions, then resolves ball-ball collisions. It contains no
-// randomness, so identical inputs yield identical outputs.
 func (w *World) Step(dt float64) {
 	damp := w.Damping
 	if damp == 0 {
@@ -108,9 +84,6 @@ func (w *World) Step(dt float64) {
 	}
 }
 
-// clampInside pins a ball's position inside the box without adding a bounce,
-// damping any velocity that would carry it back through the wall. It is the
-// final safety net after collision resolution.
 func (w *World) clampInside(b *Ball) {
 	if b.Pos.X-b.R < 0 {
 		b.Pos.X = b.R
@@ -128,9 +101,6 @@ func (w *World) clampInside(b *Ball) {
 	}
 }
 
-// resolveWalls clamps a ball inside the box and reflects the velocity component
-// normal to any wall it crossed, scaled by -Restitution. The tangential
-// component is lightly damped so balls settle.
 func (w *World) resolveWalls(b *Ball) {
 	if b.Pos.X-b.R < 0 {
 		b.Pos.X = b.R
@@ -153,9 +123,6 @@ func (w *World) resolveWalls(b *Ball) {
 	}
 }
 
-// resolvePair handles a collision between two balls: if they overlap, push them
-// apart along the contact normal and apply an elastic impulse along that normal,
-// conserving momentum. Tangential velocity is left untouched.
 func (w *World) resolvePair(a, b *Ball) {
 	dx := b.Pos.X - a.Pos.X
 	dy := b.Pos.Y - a.Pos.Y

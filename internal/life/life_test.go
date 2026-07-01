@@ -5,14 +5,12 @@ import (
 	"testing"
 )
 
-// setCells marks the given (x,y) coordinates alive on a fresh board.
 func setCells(b *Board, cells [][2]int) {
 	for _, c := range cells {
 		b.Set(c[0], c[1], true)
 	}
 }
 
-// liveCells returns the sorted list of live coordinates for stable comparison.
 func liveCells(b *Board) [][2]int {
 	var out [][2]int
 	for y := range b.H() {

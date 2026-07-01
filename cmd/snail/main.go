@@ -1,20 +1,18 @@
-// Command snail is a Pomodoro timer in which a snail crosses the screen exactly
-// once per session.
 package main
 
 import (
-	"github.com/danielriddell21/toolshed/internal/buildinfo"
-
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
+	"github.com/danielriddell21/toolshed/internal/cli"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/spf13/cobra"
+
 	"github.com/danielriddell21/toolshed/internal/anim"
 	"github.com/danielriddell21/toolshed/internal/sprite"
 	"github.com/danielriddell21/toolshed/internal/style"
-	"github.com/spf13/cobra"
 )
 
 const fps = 8
@@ -28,7 +26,7 @@ const (
 )
 
 type model struct {
-	size    anim.Size
+	anim.Size
 	work    time.Duration
 	rest    time.Duration
 	phase   phase
@@ -43,7 +41,7 @@ func (m model) Init() tea.Cmd { return anim.Frames(fps) }
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.size.Update(msg)
+		m.Size.Update(msg)
 		return m, nil
 
 	case tea.KeyMsg:
@@ -120,10 +118,10 @@ func (m model) remaining() time.Duration {
 }
 
 func (m model) View() string {
-	if !m.size.Ready() {
+	if !m.Ready() {
 		return "Waking the snail...\n"
 	}
-	w := max(m.size.Width, 24)
+	w := max(m.Width, 24)
 	track := w - 6
 	c := sprite.NewCanvas(w, 3)
 
@@ -165,7 +163,6 @@ func (m model) View() string {
 }
 
 func main() {
-	buildinfo.HandleVersionFlag()
 	var (
 		work time.Duration
 		rest time.Duration
@@ -183,16 +180,14 @@ func main() {
 				running: true,
 				last:    time.Now(),
 			}
-			_, err := tea.NewProgram(m, tea.WithAltScreen()).Run()
-			return err
+			if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
+				return fmt.Errorf("run program: %w", err)
+			}
+			return nil
 		},
 	}
 	root.Flags().DurationVar(&work, "duration", 25*time.Minute, "length of the focus session")
 	root.Flags().DurationVar(&rest, "break", 0, "optional break session (second crossing)")
-	root.SilenceUsage = true
 
-	if err := root.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, "snail:", err)
-		os.Exit(1)
-	}
+	cli.Execute(root)
 }

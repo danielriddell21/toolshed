@@ -1,21 +1,20 @@
-// Command markov trains an n-gram Markov chain on text and generates new text.
 package main
 
 import (
-	"github.com/danielriddell21/toolshed/internal/buildinfo"
-
 	"fmt"
 	"math/rand"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/danielriddell21/toolshed/internal/markov"
+	"github.com/danielriddell21/toolshed/internal/cli"
+
 	"github.com/spf13/cobra"
+
+	"github.com/danielriddell21/toolshed/internal/markov"
 )
 
 func main() {
-	buildinfo.HandleVersionFlag()
 	var (
 		in     string
 		order  int
@@ -48,9 +47,7 @@ func main() {
 				c.TrainText(string(data))
 			}
 
-			if seed == 0 {
-				seed = time.Now().UnixNano()
-			}
+			seed = cli.DefaultSeed(seed)
 			rng := rand.New(rand.NewSource(seed))
 			tokens := c.Generate(rng, words, temp)
 
@@ -61,13 +58,11 @@ func main() {
 			}
 
 			// Stream tokens one at a time, spacing them as Render would.
-			prevOpen := false
 			for i, tok := range tokens {
-				if i > 0 && !isCloser(tok) && !prevOpen {
+				if i > 0 && markov.NeedsSpace(tokens[i-1], tok) {
 					_, _ = fmt.Fprint(out, " ")
 				}
 				_, _ = fmt.Fprint(out, tok)
-				prevOpen = isOpener(tok)
 				time.Sleep(60 * time.Millisecond)
 			}
 			_, _ = fmt.Fprintln(out)
@@ -82,28 +77,6 @@ func main() {
 	root.Flags().BoolVar(&stream, "stream", false, "print token-by-token with a small delay")
 	root.Flags().Float64Var(&temp, "temp", 1.0, "sampling temperature (<1 favors common, >1 flattens)")
 	_ = root.MarkFlagRequired("in")
-	root.SilenceUsage = true
 
-	if err := root.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, "markov:", err)
-		os.Exit(1)
-	}
-}
-
-// isCloser / isOpener mirror the spacing rules in the markov package so the
-// stream output matches Render. Kept local to main since they are tiny.
-func isCloser(tok string) bool {
-	switch tok {
-	case ".", ",", "!", "?", ";", ":", ")", "]", "}", "'", "\"", "%":
-		return true
-	}
-	return false
-}
-
-func isOpener(tok string) bool {
-	switch tok {
-	case "(", "[", "{":
-		return true
-	}
-	return false
+	cli.Execute(root)
 }

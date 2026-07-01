@@ -1,26 +1,22 @@
-// Command maze generates or loads a maze and animates a BFS / A* search
-// solving it, then reveals the shortest path.
 package main
 
 import (
-	"github.com/danielriddell21/toolshed/internal/buildinfo"
-
 	"fmt"
 	"math/rand"
 	"os"
-	"strconv"
 	"strings"
-	"time"
+
+	"github.com/danielriddell21/toolshed/internal/cli"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/spf13/cobra"
+
 	"github.com/danielriddell21/toolshed/internal/anim"
 	"github.com/danielriddell21/toolshed/internal/maze"
 	"github.com/danielriddell21/toolshed/internal/style"
-	"github.com/spf13/cobra"
 )
 
-// cellState tracks how far the replay has touched each cell.
 type cellState uint8
 
 const (
@@ -38,11 +34,10 @@ type model struct {
 	steps  []maze.Step
 	path   []maze.Point
 	found  bool
-	cursor int         // index into steps consumed so far
-	state  []cellState // per-cell render state, indexed y*W+x
-	done   bool        // replay finished, path revealed
+	cursor int
+	state  []cellState
+	done   bool
 
-	// precomputed per-cell styles, reused every frame
 	wallStyle, openStyle, visitStyle, frontStyle, pathStyle, startStyle, endStyle lipgloss.Style
 }
 
@@ -198,31 +193,13 @@ func (m model) status() string {
 	return style.Note.Render(strings.Join(parts, "   "))
 }
 
-func parseDims(s string) (int, int, error) {
-	parts := strings.Split(strings.ToLower(strings.TrimSpace(s)), "x")
-	if len(parts) != 2 {
-		return 0, 0, fmt.Errorf("bad size %q (want WxH, e.g. 31x21)", s)
-	}
-	w, err := strconv.Atoi(strings.TrimSpace(parts[0]))
-	if err != nil || w <= 0 {
-		return 0, 0, fmt.Errorf("bad width in %q", s)
-	}
-	h, err := strconv.Atoi(strings.TrimSpace(parts[1]))
-	if err != nil || h <= 0 {
-		return 0, 0, fmt.Errorf("bad height in %q", s)
-	}
-	return w, h, nil
-}
-
 func loadMaze(in, generate string, seed int64) (*maze.Maze, error) {
 	if generate != "" {
-		w, h, err := parseDims(generate)
+		w, h, err := cli.ParseDims(generate)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("parse --generate: %w", err)
 		}
-		if seed == 0 {
-			seed = time.Now().UnixNano()
-		}
+		seed = cli.DefaultSeed(seed)
 		return maze.Generate(w, h, rand.New(rand.NewSource(seed))), nil
 	}
 	if in == "" {
@@ -230,14 +207,17 @@ func loadMaze(in, generate string, seed int64) (*maze.Maze, error) {
 	}
 	f, err := os.Open(in)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("open %s: %w", in, err)
 	}
 	defer func() { _ = f.Close() }()
-	return maze.Parse(f)
+	mz, err := maze.Parse(f)
+	if err != nil {
+		return nil, fmt.Errorf("parse maze: %w", err)
+	}
+	return mz, nil
 }
 
 func main() {
-	buildinfo.HandleVersionFlag()
 	var (
 		in       string
 		algoStr  string
@@ -253,15 +233,17 @@ func main() {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			algo, err := maze.ParseAlgo(algoStr)
 			if err != nil {
-				return err
+				return fmt.Errorf("parse algo: %w", err)
 			}
 			mz, err := loadMaze(in, generate, seed)
 			if err != nil {
 				return err
 			}
 			m := newModel(mz, algo, speed)
-			_, err = tea.NewProgram(m, tea.WithAltScreen()).Run()
-			return err
+			if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
+				return fmt.Errorf("run program: %w", err)
+			}
+			return nil
 		},
 	}
 	root.Flags().StringVar(&in, "in", "", "maze file to read")
@@ -269,10 +251,6 @@ func main() {
 	root.Flags().IntVar(&speed, "speed", 30, "animation steps per second")
 	root.Flags().StringVar(&generate, "generate", "", "generate a maze instead of reading --in, e.g. 31x21")
 	root.Flags().Int64Var(&seed, "seed", 0, "random seed for generation (0 = time-based)")
-	root.SilenceUsage = true
 
-	if err := root.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, "maze:", err)
-		os.Exit(1)
-	}
+	cli.Execute(root)
 }

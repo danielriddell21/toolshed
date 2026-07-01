@@ -1,38 +1,37 @@
-// Command crabs races ASCII crabs across the terminal. Bet nothing, win nothing.
 package main
 
 import (
-	"github.com/danielriddell21/toolshed/internal/buildinfo"
-
 	"fmt"
 	"math/rand"
-	"os"
 	"strings"
 
+	"github.com/danielriddell21/toolshed/internal/cli"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/spf13/cobra"
+
 	"github.com/danielriddell21/toolshed/internal/anim"
 	"github.com/danielriddell21/toolshed/internal/sprite"
 	"github.com/danielriddell21/toolshed/internal/style"
-	"github.com/spf13/cobra"
 )
 
 const (
 	crabGlyph  = "(\\/)°<"
-	finishPad  = 4  // columns reserved on the right for the finish line
-	holdFrames = 45 // frames to linger on a result before looping
+	finishPad  = 4
+	holdFrames = 45
 	fps        = 30
 )
 
 type model struct {
-	size   anim.Size
+	anim.Size
 	rng    *rand.Rand
 	crabs  []sprite.Sprite
-	bases  []float64 // base speed per crab
-	speed  float64   // global pace multiplier
+	bases  []float64
+	speed  float64
 	count  int
 	loop   bool
-	winner int // -1 until someone wins
-	hold   int // frames lingered since a win
+	winner int
+	hold   int
 }
 
 func newModel(count int, speed float64, loop bool, seed int64) model {
@@ -67,7 +66,7 @@ func (m *model) reset() {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.size.Update(msg)
+		m.Size.Update(msg)
 		if m.crabs == nil {
 			m.reset()
 		}
@@ -90,7 +89,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *model) step() {
-	if !m.size.Ready() {
+	if !m.Ready() {
 		return
 	}
 	if m.winner >= 0 {
@@ -101,7 +100,7 @@ func (m *model) step() {
 		}
 		return
 	}
-	finish := float64(m.size.Width - finishPad)
+	finish := float64(m.Width - finishPad)
 	for i := range m.crabs {
 		m.crabs[i].X += m.bases[i] * m.speed * (0.5 + m.rng.Float64())
 		if m.crabs[i].X >= finish {
@@ -112,14 +111,14 @@ func (m *model) step() {
 }
 
 func (m model) View() string {
-	if !m.size.Ready() {
+	if !m.Ready() {
 		return "Loading the crabs...\n"
 	}
-	w := max(m.size.Width, 20)
+	w := max(m.Width, 20)
 	h := max(m.count*2+1, 4)
 	c := sprite.NewCanvas(w, h)
 
-	finish := m.size.Width - finishPad
+	finish := m.Width - finishPad
 	for y := range h {
 		c.Set(finish+1, y, '|')
 	}
@@ -143,7 +142,6 @@ func (m model) View() string {
 }
 
 func main() {
-	buildinfo.HandleVersionFlag()
 	var (
 		count int
 		speed float64
@@ -157,22 +155,18 @@ func main() {
 			"There is a winner. There is no prize.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			count = max(count, 1)
-			if seed == 0 {
-				seed = int64(os.Getpid())
-			}
+			seed = cli.DefaultSeed(seed)
 			m := newModel(count, speed, loop, seed)
-			_, err := tea.NewProgram(m, tea.WithAltScreen()).Run()
-			return err
+			if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
+				return fmt.Errorf("run program: %w", err)
+			}
+			return nil
 		},
 	}
 	root.Flags().IntVar(&count, "count", 2, "number of crabs")
 	root.Flags().Float64Var(&speed, "speed", 1.0, "pace multiplier")
 	root.Flags().BoolVar(&loop, "loop", false, "restart automatically after each race")
 	root.Flags().Int64Var(&seed, "seed", 0, "random seed (0 = pick one)")
-	root.SilenceUsage = true
 
-	if err := root.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, "crabs:", err)
-		os.Exit(1)
-	}
+	cli.Execute(root)
 }

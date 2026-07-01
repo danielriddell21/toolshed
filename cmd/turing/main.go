@@ -1,11 +1,6 @@
-// Command turing runs a Gray-Scott reaction-diffusion simulation and writes the
-// resulting Turing pattern to a PNG, optionally also an animated GIF of the
-// evolution. It is a thin CLI wrapper around internal/grayscott.
 package main
 
 import (
-	"github.com/danielriddell21/toolshed/internal/buildinfo"
-
 	"fmt"
 	"image"
 	"image/color"
@@ -16,13 +11,15 @@ import (
 	"os"
 	"strings"
 
+	"github.com/danielriddell21/toolshed/internal/cli"
+
+	"github.com/spf13/cobra"
+
 	"github.com/danielriddell21/toolshed/internal/grayscott"
 	"github.com/danielriddell21/toolshed/internal/palette"
-	"github.com/spf13/cobra"
 )
 
 func main() {
-	buildinfo.HandleVersionFlag()
 	var (
 		preset  string
 		feed    float64
@@ -54,12 +51,8 @@ func main() {
 	root.Flags().StringVar(&gifPath, "gif", "", "also write an animated GIF to this path")
 	root.Flags().StringVar(&palName, "palette", "coral", "color gradient ("+strings.Join(palette.Names(), ", ")+")")
 	root.Flags().Int64Var(&seed, "seed", 1, "random seed")
-	root.SilenceUsage = true
 
-	if err := root.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, "turing:", err)
-		os.Exit(1)
-	}
+	cli.Execute(root)
 }
 
 func run(cmd *cobra.Command, preset string, feed, kill float64, steps, size int, out, gifPath, palName string, seed int64) error {
@@ -128,28 +121,33 @@ func run(cmd *cobra.Command, preset string, feed, kill float64, steps, size int,
 func writePNG(path string, img image.Image) error {
 	f, err := os.Create(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("create %s: %w", path, err)
 	}
 	defer func() { _ = f.Close() }()
 	if err := png.Encode(f, img); err != nil {
-		return err
+		return fmt.Errorf("encode png: %w", err)
 	}
-	return f.Close()
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("close %s: %w", path, err)
+	}
+	return nil
 }
 
 func writeGIF(path string, g *gif.GIF) error {
 	f, err := os.Create(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("create %s: %w", path, err)
 	}
 	defer func() { _ = f.Close() }()
 	if err := gif.EncodeAll(f, g); err != nil {
-		return err
+		return fmt.Errorf("encode gif: %w", err)
 	}
-	return f.Close()
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("close %s: %w", path, err)
+	}
+	return nil
 }
 
-// gradientPalette samples a 256-entry color palette from the gradient.
 func gradientPalette(g palette.Gradient) color.Palette {
 	pal := make(color.Palette, 256)
 	for i := range pal {
@@ -159,7 +157,6 @@ func gradientPalette(g palette.Gradient) color.Palette {
 	return pal
 }
 
-// toPaletted converts an RGBA image to a paletted image using pal.
 func toPaletted(src *image.RGBA, pal color.Palette) *image.Paletted {
 	dst := image.NewPaletted(src.Bounds(), pal)
 	b := src.Bounds()

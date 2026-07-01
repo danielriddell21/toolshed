@@ -1,26 +1,24 @@
-// Command garden is a zen sand garden you rake with the arrow keys.
 package main
 
 import (
-	"github.com/danielriddell21/toolshed/internal/buildinfo"
-
 	"fmt"
-	"os"
 	"strings"
 
+	"github.com/danielriddell21/toolshed/internal/cli"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/spf13/cobra"
+
 	"github.com/danielriddell21/toolshed/internal/anim"
 	"github.com/danielriddell21/toolshed/internal/style"
-	"github.com/spf13/cobra"
 )
 
-// rakePatterns are the strokes the rake can leave in the sand.
 var rakePatterns = []rune{'~', '=', '-', '≈', '·'}
 
-const sand = '·' // a faint dot, the untouched sand
+const sand = '·'
 
 type model struct {
-	size    anim.Size
+	anim.Size
 	grid    [][]rune
 	cx, cy  int
 	pattern int
@@ -29,8 +27,8 @@ type model struct {
 func (m model) Init() tea.Cmd { return nil }
 
 func (m *model) ensureGrid() {
-	w := max(m.size.Width, 10)
-	h := max(m.size.Height-3, 5)
+	w := max(m.Width, 10)
+	h := max(m.Height-3, 5)
 	if len(m.grid) == h && len(m.grid[0]) == w {
 		return
 	}
@@ -63,13 +61,13 @@ func (m *model) rake() {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.size.Update(msg)
+		m.Size.Update(msg)
 		m.ensureGrid()
 		m.rake()
 		return m, nil
 
 	case tea.KeyMsg:
-		if !m.size.Ready() {
+		if !m.Ready() {
 			return m, nil
 		}
 		h, w := len(m.grid), len(m.grid[0])
@@ -96,7 +94,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	if !m.size.Ready() {
+	if !m.Ready() {
 		return "Smoothing the sand...\n"
 	}
 	var b strings.Builder
@@ -119,20 +117,17 @@ func (m model) View() string {
 }
 
 func main() {
-	buildinfo.HandleVersionFlag()
 	root := &cobra.Command{
 		Use:   "garden",
 		Short: "Rake a zen sand garden",
 		Long: "garden is a small patch of sand you rake with the arrow keys. Cycle rake " +
 			"patterns, reset when you like. There is no score and no end.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := tea.NewProgram(model{}, tea.WithAltScreen()).Run()
-			return err
+			if _, err := tea.NewProgram(model{}, tea.WithAltScreen()).Run(); err != nil {
+				return fmt.Errorf("run program: %w", err)
+			}
+			return nil
 		},
 	}
-	root.SilenceUsage = true
-	if err := root.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, "garden:", err)
-		os.Exit(1)
-	}
+	cli.Execute(root)
 }

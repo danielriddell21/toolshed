@@ -96,7 +96,7 @@ func TestTemperatureBiasesCommon(t *testing.T) {
 	// State "x" -> "common" 9 times, "rare" once. Low temp should favor
 	// "common" overwhelmingly across samples.
 	c := NewChain(1)
-	toks := []string{}
+	toks := make([]string, 0, 20)
 	for range 9 {
 		toks = append(toks, "x", "common")
 	}

@@ -1,28 +1,41 @@
 # Build output
 /bin/
+/dist/
+
+# Go build & test artifacts
+*.exe
+*.test
+*.out
+*.prof
+coverage.txt
+coverage.html
+
+# Editor / OS
+.DS_Store
+.idea/
+*.swp
+*~
+
+# Env / local
+.env
+.env.local
+.claude/
 
 # Stray binaries from `go build ./cmd/<name>` in the repo root
 /crabs
-/fish
-/snail
-/garden
 /duck
+/fish
 /fractal
+/garden
+/life
 /markov
 /maze
-/turing
-/life
 /sandbox
+/snail
+/turing
 
-# Generated images from local runs
+# Generated images from local runs (keep committed docs assets)
 *.png
 *.gif
 !docs/img/*.gif
 !docs/img/*.png
-
-# Coverage profiles
-*.out
-coverage.txt
-
-# OS cruft
-.DS_Store

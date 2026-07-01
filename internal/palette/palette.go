@@ -1,6 +1,3 @@
-// Package palette maps a float in [0,1] to a 24-bit color via named gradients.
-// It is shared by the fractal explorer (escape-time coloring) and the
-// reaction-diffusion tool (concentration coloring).
 package palette
 
 import (
@@ -10,19 +7,15 @@ import (
 	"github.com/danielriddell21/toolshed/internal/render"
 )
 
-// Stop is a color anchored at position P in [0,1].
 type Stop struct {
 	P       float64
 	R, G, B uint8
 }
 
-// Gradient is an ordered set of stops sampled by linear RGB interpolation.
 type Gradient struct {
 	stops []Stop
 }
 
-// New builds a gradient from stops. They are sorted by position; it panics with
-// fewer than two stops.
 func New(stops ...Stop) Gradient {
 	if len(stops) < 2 {
 		panic("palette: a gradient needs at least two stops")
@@ -41,7 +34,6 @@ func New(stops ...Stop) Gradient {
 	return Gradient{stops: s}
 }
 
-// At samples the gradient at t, clamped to [0,1].
 func (g Gradient) At(t float64) render.RGB {
 	t = max(0, min(1, t))
 	// Find the first stop whose position is >= t.
@@ -78,7 +70,6 @@ func (g Gradient) At(t float64) render.RGB {
 	)
 }
 
-// registry holds the built-in named gradients.
 var registry = map[string]Gradient{
 	"fire": New(
 		Stop{0.0, 0, 0, 0}, Stop{0.4, 153, 0, 0},
@@ -105,13 +96,11 @@ var registry = map[string]Gradient{
 	),
 }
 
-// Named returns the registered gradient and whether it exists.
 func Named(name string) (Gradient, bool) {
 	g, ok := registry[name]
 	return g, ok
 }
 
-// Names returns the registered gradient names, sorted.
 func Names() []string {
 	return slices.Sorted(maps.Keys(registry))
 }

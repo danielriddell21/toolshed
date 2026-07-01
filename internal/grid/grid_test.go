@@ -4,8 +4,13 @@ import "testing"
 
 func TestWrap(t *testing.T) {
 	cases := []struct{ v, n, want int }{
-		{0, 5, 0}, {4, 5, 4}, {5, 5, 0}, {6, 5, 1},
-		{-1, 5, 4}, {-5, 5, 0}, {-6, 5, 4},
+		{0, 5, 0},
+		{4, 5, 4},
+		{5, 5, 0},
+		{6, 5, 1},
+		{-1, 5, 4},
+		{-5, 5, 0},
+		{-6, 5, 4},
 	}
 	for _, c := range cases {
 		if got := Wrap(c.v, c.n); got != c.want {

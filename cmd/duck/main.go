@@ -1,29 +1,25 @@
-// Command duck is a rubber-duck debugging companion. It only ever says "mhm",
-// with escalating skepticism. That is the entire point.
 package main
 
 import (
-	"github.com/danielriddell21/toolshed/internal/buildinfo"
-
 	"fmt"
 	"math/rand"
-	"os"
 	"strings"
-	"time"
+
+	"github.com/danielriddell21/toolshed/internal/cli"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/spf13/cobra"
+
 	"github.com/danielriddell21/toolshed/internal/anim"
 	"github.com/danielriddell21/toolshed/internal/style"
-	"github.com/spf13/cobra"
 )
 
 const (
 	fps       = 4
-	decayIdle = 12 // ticks of silence before skepticism eases (~3s)
+	decayIdle = 12
 	maxLevel  = 4
 )
 
-// replies indexed by skepticism level; each level has interchangeable variants.
 var replies = [][]string{
 	{"mhm.", "mm.", "right."},
 	{"mhm…", "mm-hm…", "go on."},
@@ -125,7 +121,6 @@ func (m model) View() string {
 }
 
 func main() {
-	buildinfo.HandleVersionFlag()
 	var seed int64
 	root := &cobra.Command{
 		Use:   "duck",
@@ -133,19 +128,16 @@ func main() {
 		Long: "duck is a rubber-duck debugging companion. It replies only with \"mhm\", " +
 			"growing more skeptical the more you explain. Its skepticism fades if you pause.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if seed == 0 {
-				seed = time.Now().UnixNano()
-			}
+			seed = cli.DefaultSeed(seed)
 			m := model{rng: rand.New(rand.NewSource(seed))}
 			_, err := tea.NewProgram(m, tea.WithAltScreen()).Run()
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "the duck watches you go. mhm.")
-			return err
+			if err != nil {
+				return fmt.Errorf("run program: %w", err)
+			}
+			return nil
 		},
 	}
 	root.Flags().Int64Var(&seed, "seed", 0, "random seed (0 = pick one)")
-	root.SilenceUsage = true
-	if err := root.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, "duck:", err)
-		os.Exit(1)
-	}
+	cli.Execute(root)
 }

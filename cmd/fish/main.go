@@ -1,24 +1,22 @@
-// Command fish maintains a tank containing exactly one increasingly bored fish.
 package main
 
 import (
-	"github.com/danielriddell21/toolshed/internal/buildinfo"
-
 	"fmt"
 	"math/rand"
-	"os"
 	"strings"
 
+	"github.com/danielriddell21/toolshed/internal/cli"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/spf13/cobra"
+
 	"github.com/danielriddell21/toolshed/internal/anim"
 	"github.com/danielriddell21/toolshed/internal/sprite"
 	"github.com/danielriddell21/toolshed/internal/style"
-	"github.com/spf13/cobra"
 )
 
 const fps = 12
 
-// thoughts the fish has, in order of escalating boredom.
 var thoughts = []string{
 	"...",
 	"again, this corner.",
@@ -32,7 +30,7 @@ var thoughts = []string{
 type bubble struct{ x, y float64 }
 
 type model struct {
-	size    anim.Size
+	anim.Size
 	rng     *rand.Rand
 	fish    sprite.Sprite
 	bubbles []bubble
@@ -47,8 +45,8 @@ func (m model) Init() tea.Cmd { return anim.Frames(fps) }
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.size.Update(msg)
-		m.fish.Y = float64(m.size.Height / 2)
+		m.Size.Update(msg)
+		m.fish.Y = float64(m.Height / 2)
 		if m.fish.Speed == 0 && !m.still {
 			m.fish.Speed = 0.6
 		}
@@ -69,16 +67,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *model) step() {
-	if !m.size.Ready() {
+	if !m.Ready() {
 		return
 	}
 	m.frame++
 	if !m.still {
-		m.fish.Advance(m.size.Width)
+		m.fish.Advance(m.Width)
 		// Occasional vertical drift keeps the tank from feeling on rails.
 		if m.frame%9 == 0 {
 			m.fish.Y += float64(m.rng.Intn(3) - 1)
-			m.fish.Y = clampF(m.fish.Y, 1, float64(m.size.Height-3))
+			m.fish.Y = clampF(m.fish.Y, 1, float64(m.Height-3))
 		}
 	}
 
@@ -109,11 +107,11 @@ func (m *model) step() {
 }
 
 func (m model) View() string {
-	if !m.size.Ready() {
+	if !m.Ready() {
 		return "Filling the tank...\n"
 	}
-	w := max(m.size.Width, 20)
-	h := max(m.size.Height-3, 6)
+	w := max(m.Width, 20)
+	h := max(m.Height-3, 6)
 	c := sprite.NewCanvas(w, h)
 
 	c.DrawString(3, h-2, "~ ~ ~  the gravel  ~ ~ ~")
@@ -138,7 +136,6 @@ func (m model) View() string {
 func clampF(v, lo, hi float64) float64 { return max(lo, min(hi, v)) }
 
 func main() {
-	buildinfo.HandleVersionFlag()
 	var (
 		still bool
 		seed  int64
@@ -149,9 +146,7 @@ func main() {
 		Long: "fish maintains a tank containing exactly one fish. It drifts within bounds, " +
 			"faces where it's going, blows the occasional bubble, and is bored.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if seed == 0 {
-				seed = int64(os.Getpid())
-			}
+			seed = cli.DefaultSeed(seed)
 			m := model{
 				rng:   rand.New(rand.NewSource(seed)),
 				still: still,
@@ -162,16 +157,14 @@ func main() {
 					FaceLeft:  "<><",
 				},
 			}
-			_, err := tea.NewProgram(m, tea.WithAltScreen()).Run()
-			return err
+			if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
+				return fmt.Errorf("run program: %w", err)
+			}
+			return nil
 		},
 	}
 	root.Flags().BoolVar(&still, "still", false, "let the fish rest in place")
 	root.Flags().Int64Var(&seed, "seed", 0, "random seed (0 = pick one)")
-	root.SilenceUsage = true
 
-	if err := root.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, "fish:", err)
-		os.Exit(1)
-	}
+	cli.Execute(root)
 }

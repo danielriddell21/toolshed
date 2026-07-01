@@ -1,6 +1,3 @@
-// Package maze provides pure (no I/O, no animation) maze parsing, generation,
-// and shortest-path solving. The solver emits an ordered event log so callers
-// can replay the search visually.
 package maze
 
 import (
@@ -13,10 +10,8 @@ import (
 	"strings"
 )
 
-// Cell is the kind of a single maze square.
 type Cell uint8
 
-// Cell kinds.
 const (
 	Open Cell = iota
 	Wall
@@ -24,17 +19,14 @@ const (
 	End
 )
 
-// Point is an (x, y) grid coordinate.
 type Point struct{ X, Y int }
 
-// Maze is a rectangular grid of cells with a designated start and end.
 type Maze struct {
 	W, H       int
 	cells      []Cell
 	Start, End Point
 }
 
-// At returns the cell at (x, y). Out-of-bounds coordinates read as Wall.
 func (m *Maze) At(x, y int) Cell {
 	if x < 0 || y < 0 || x >= m.W || y >= m.H {
 		return Wall
@@ -50,9 +42,6 @@ func (m *Maze) passable(x, y int) bool {
 	return m.At(x, y) != Wall
 }
 
-// Parse reads a maze from r. '#' = wall, ' ' or '.' = open, 'S' = start,
-// 'E' = end. Ragged lines are padded on the right with walls. It returns an
-// error if the input is empty or is missing a start or end cell.
 func Parse(r io.Reader) (*Maze, error) {
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 0, 64*1024), 16*1024*1024)
@@ -78,27 +67,8 @@ func Parse(r io.Reader) (*Maze, error) {
 			if x < len(row) {
 				ch = row[x]
 			}
-			switch ch {
-			case '#':
-				m.set(x, y, Wall)
-			case ' ', '.':
-				m.set(x, y, Open)
-			case 'S', 's':
-				if haveStart {
-					return nil, errors.New("maze has more than one start")
-				}
-				m.set(x, y, Start)
-				m.Start = Point{x, y}
-				haveStart = true
-			case 'E', 'e':
-				if haveEnd {
-					return nil, errors.New("maze has more than one end")
-				}
-				m.set(x, y, End)
-				m.End = Point{x, y}
-				haveEnd = true
-			default:
-				return nil, fmt.Errorf("unrecognised character %q at row %d col %d", rune(ch), y, x)
+			if err := m.parseCell(x, y, ch, &haveStart, &haveEnd); err != nil {
+				return nil, err
 			}
 		}
 	}
@@ -111,10 +81,32 @@ func Parse(r io.Reader) (*Maze, error) {
 	return m, nil
 }
 
-// Generate builds a solvable maze using an iterative recursive backtracker.
-// Dimensions are forced odd and at least 3 so the wall/passage grid is well
-// formed. Start is placed at the top-left open cell, End at the bottom-right
-// open cell. rng makes generation reproducible.
+func (m *Maze) parseCell(x, y int, ch byte, haveStart, haveEnd *bool) error {
+	switch ch {
+	case '#':
+		m.set(x, y, Wall)
+	case ' ', '.':
+		m.set(x, y, Open)
+	case 'S', 's':
+		if *haveStart {
+			return errors.New("maze has more than one start")
+		}
+		m.set(x, y, Start)
+		m.Start = Point{x, y}
+		*haveStart = true
+	case 'E', 'e':
+		if *haveEnd {
+			return errors.New("maze has more than one end")
+		}
+		m.set(x, y, End)
+		m.End = Point{x, y}
+		*haveEnd = true
+	default:
+		return fmt.Errorf("unrecognised character %q at row %d col %d", rune(ch), y, x)
+	}
+	return nil
+}
+
 func Generate(w, h int, rng *rand.Rand) *Maze {
 	w = max(w, 3)
 	h = max(h, 3)
@@ -167,16 +159,13 @@ func Generate(w, h int, rng *rand.Rand) *Maze {
 	return m
 }
 
-// Algo selects the search algorithm.
 type Algo int
 
-// Search algorithms.
 const (
 	BFS Algo = iota
 	AStar
 )
 
-// ParseAlgo converts a flag string into an Algo.
 func ParseAlgo(s string) (Algo, error) {
 	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "bfs":
@@ -188,17 +177,14 @@ func ParseAlgo(s string) (Algo, error) {
 	}
 }
 
-// StepKind classifies an event in the search replay log.
 type StepKind uint8
 
-// Step kinds in the search replay.
 const (
 	Visit StepKind = iota
 	Frontier
 	Path
 )
 
-// Step is one entry in the search event log.
 type Step struct {
 	P    Point
 	Kind StepKind
@@ -206,11 +192,6 @@ type Step struct {
 
 var moves = [4]Point{{0, -1}, {1, 0}, {0, 1}, {-1, 0}}
 
-// Solve runs the chosen algorithm and returns the ordered visit/frontier event
-// log, the reconstructed shortest path (Start..End inclusive), and whether a
-// path was found. It is pure: no animation, no time, no I/O. Movement is
-// 4-connected with equal edge weights, so both BFS and A* yield a shortest
-// path. A* uses the Manhattan heuristic via container/heap.
 func Solve(m *Maze, algo Algo) (steps []Step, path []Point, found bool) {
 	if m == nil || m.W == 0 || m.H == 0 {
 		return nil, nil, false
@@ -284,10 +265,9 @@ func abs(x int) int {
 	return x
 }
 
-// pqItem is a node on the A* priority queue.
 type pqItem struct {
 	p     Point
-	f     int // g + heuristic
+	f     int
 	g     int
 	index int
 }
@@ -301,16 +281,19 @@ func (pq priorityQueue) Less(i, j int) bool {
 	}
 	return pq[i].g > pq[j].g // prefer deeper nodes on ties
 }
+
 func (pq priorityQueue) Swap(i, j int) {
 	pq[i], pq[j] = pq[j], pq[i]
 	pq[i].index = i
 	pq[j].index = j
 }
+
 func (pq *priorityQueue) Push(x any) {
 	it := x.(*pqItem)
 	it.index = len(*pq)
 	*pq = append(*pq, it)
 }
+
 func (pq *priorityQueue) Pop() any {
 	old := *pq
 	n := len(old)

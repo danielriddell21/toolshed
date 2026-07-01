@@ -1,8 +1,10 @@
 # toolshed
 
+> *A shed full of terminal toys.*
+
 [![CI](https://github.com/danielriddell21/toolshed/actions/workflows/ci.yaml/badge.svg)](https://github.com/danielriddell21/toolshed/actions/workflows/ci.yaml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=danielriddell21_toolshed&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=danielriddell21_toolshed)
 [![codecov](https://codecov.io/gh/danielriddell21/toolshed/graph/badge.svg)](https://codecov.io/gh/danielriddell21/toolshed)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=danielriddell21_toolshed&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=danielriddell21_toolshed)
 [![Go 1.26](https://img.shields.io/badge/go-1.26-blue)](https://go.dev)
 [![MIT License](https://img.shields.io/badge/licence-MIT-green)](LICENSE)
 
@@ -69,8 +71,7 @@ go build ./...
 | `garden` | A zen sand garden you rake with the arrow keys. |
 | `duck` | A rubber-duck debugging companion that only ever says "mhm". |
 
-## A taste
-
+## Quick start
 ```sh
 # Explore the Mandelbrot set (arrows pan, +/- zoom, j toggles Julia, q quits)
 $ fractal
@@ -106,3 +107,7 @@ unit-tested engine in `internal/`:
 ```sh
 go test ./...
 ```
+
+## Documentation
+
+- [Demos](docs/demos.md)

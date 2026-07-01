@@ -1,8 +1,3 @@
-// Package grayscott implements the Gray-Scott reaction-diffusion model on a
-// toroidal grid. Two chemical fields U and V diffuse and react; depending on
-// the feed and kill rates the system settles into spots, stripes, mazes and
-// other Turing patterns. The simulation core is pure and double-buffered so it
-// is cheap to test and to render to images.
 package grayscott
 
 import (
@@ -17,22 +12,17 @@ import (
 	"github.com/danielriddell21/toolshed/internal/palette"
 )
 
-// Params holds the Gray-Scott reaction-diffusion coefficients.
 type Params struct {
 	Feed, Kill, Du, Dv, Dt float64
 }
 
-// Sim is a double-buffered Gray-Scott simulation on a W by H toroidal grid.
 type Sim struct {
 	W, H   int
-	u, v   []float64 // current fields, row-major, len W*H
-	nu, nv []float64 // scratch buffers for the next step
+	u, v   []float64
+	nu, nv []float64
 	params Params
 }
 
-// New creates a sim seeded with U=1 everywhere and a small central square of
-// V=1 perturbation. A little randomness from rng nudges the seed so runs are
-// reproducible for a given seed but not perfectly symmetric.
 func New(w, h int, p Params, rng *rand.Rand) *Sim {
 	w = max(w, 1)
 	h = max(h, 1)
@@ -66,14 +56,12 @@ func New(w, h int, p Params, rng *rand.Rand) *Sim {
 	return s
 }
 
-// laplacian weights for the classic Gray-Scott 9-point kernel.
 const (
 	wCenter = -1.0
 	wOrtho  = 0.2
 	wDiag   = 0.05
 )
 
-// Step advances the simulation by one Gray-Scott update with toroidal wrapping.
 func (s *Sim) Step() {
 	w, h := s.W, s.H
 	p := s.params
@@ -103,21 +91,16 @@ func (s *Sim) Step() {
 	s.v, s.nv = s.nv, s.v
 }
 
-// StepN advances the simulation by n steps.
 func (s *Sim) StepN(n int) {
 	for range n {
 		s.Step()
 	}
 }
 
-// V returns the current V field (row-major, len W*H).
 func (s *Sim) V() []float64 { return s.v }
 
-// U returns the current U field (row-major, len W*H).
 func (s *Sim) U() []float64 { return s.u }
 
-// Image renders the current V field to an RGBA image using gradient g. The V
-// field is normalized to [0,1] across its observed range for the lookup.
 func (s *Sim) Image(g palette.Gradient) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, s.W, s.H))
 	lo, hi := math.Inf(1), math.Inf(-1)
@@ -140,8 +123,6 @@ func (s *Sim) Image(g palette.Gradient) *image.RGBA {
 	return img
 }
 
-// presets maps names to well-known Gray-Scott (feed, kill) pairs. All share the
-// standard diffusion and timestep coefficients.
 var presets = map[string][2]float64{
 	"coral":    {0.0545, 0.062},
 	"spots":    {0.035, 0.065},
@@ -151,7 +132,6 @@ var presets = map[string][2]float64{
 	"solitons": {0.030, 0.062},
 }
 
-// Preset returns the named parameter set and whether it exists.
 func Preset(name string) (Params, bool) {
 	fk, ok := presets[name]
 	if !ok {
@@ -160,7 +140,6 @@ func Preset(name string) (Params, bool) {
 	return Params{Feed: fk[0], Kill: fk[1], Du: 0.16, Dv: 0.08, Dt: 1.0}, true
 }
 
-// PresetNames returns the available preset names, sorted.
 func PresetNames() []string {
 	return slices.Sorted(maps.Keys(presets))
 }
