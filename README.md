@@ -13,7 +13,7 @@ can fly through, simulations that paint themselves, a maze solver that shows its
 work, and a handful of small ambient things to leave running in a corner of the
 screen.
 
-Eleven binaries, one module, no fuss.
+Twelve binaries, one module, no fuss.
 
 ## Install
 
@@ -48,6 +48,7 @@ go build ./...
 | --- | --- |
 | `life` | Conway's Game of Life, seeded deterministically from a real directory tree — the same folder always grows the same way. |
 | `sandbox` | A physics sandbox. Drop balls into a box and watch them fall, bounce, collide, and settle. |
+| `battery` | A cell charging and draining, drawn as a multi-storey car park. Kinetic battery model, Shepherd voltage curve, Arrhenius thermals, and a Peukert report. |
 
 ### Text
 
@@ -84,10 +85,16 @@ $ markov --in corpus.txt --words 120 --seed 1
 
 # Generate a maze and watch A* solve it
 $ maze --generate 41x21 --algo astar
+
+# Hammer a lead-acid cell at 2C and watch it "run out" while still half full
+$ battery --chem lead --load 2 --speed 240
+
+# Measure the rate-capacity effect and fit a Peukert exponent
+$ battery --report --chem lead
 ```
 
-The interactive tools (`fractal`, `life`, `sandbox`, `maze`, and the ambient
-toys) run in the alternate screen; press `q` (or `ctrl+c`) to leave.
+The interactive tools (`fractal`, `life`, `sandbox`, `battery`, `maze`, and the
+ambient toys) run in the alternate screen; press `q` (or `ctrl+c`) to leave.
 
 See [docs/demos.md](docs/demos.md) for recordings of each tool.
 
@@ -100,7 +107,7 @@ unit-tested engine in `internal/`:
 - `internal/palette` — float→RGB gradients shared by `fractal` and `turing`.
 - `internal/grid` — generic toroidal grid shared by `life` and `turing`.
 - `internal/fractal`, `internal/grayscott`, `internal/maze`, `internal/markov`,
-  `internal/life`, `internal/physics` — the per-tool engines.
+  `internal/life`, `internal/physics`, `internal/battery` — the per-tool engines.
 - `internal/anim`, `internal/sprite`, `internal/style` — the Bubble Tea + Lipgloss
   helpers behind the ambient toys.
 

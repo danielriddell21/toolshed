@@ -44,6 +44,64 @@ and settle. `g` flips gravity, `c` clears.
 
 ![sandbox demo](img/sandbox.gif)
 
+### battery
+
+A cell charging and draining, drawn as the car park it behaves like.
+
+![battery demo](img/battery.gif)
+
+The analogy is the model, not a decoration. Charge parks in bays. The **front
+bays** sit beside the ramp and can leave the instant you ask; the **deep bays**
+hold just as much charge but need time to reach the exit. Everything the tool
+shows falls out of that one split:
+
+- **Pull hard and the cell "runs out" while still half full.** The front bays
+  empty faster than the ramp can refill them, terminal voltage follows the
+  *front* bays rather than the total, and the cut-off trips with the deep bays
+  still stocked. In the recording, the lead-acid cell hits empty at 47% state of
+  charge.
+- **Leave it alone and it comes back.** Cars keep walking down to the ramp after
+  the load is gone, so voltage recovers and a "flat" cell will run again — the
+  reason a dead torch works for another minute if you rest it.
+- **Charging is the same in reverse.** A charger fills the front bays quickly,
+  voltage hits the ceiling, and the rest of the charge has to trickle in at
+  constant voltage while cars find their way to the back. That is the long tail
+  on every phone charge.
+
+Under the drawing:
+
+- **Kinetic battery model** (Manwell & McGowan, 1993) for the two wells, advanced
+  by the exact solution of its differential equations rather than an Euler step.
+- **Shepherd/Tremblay-Dessaint curve** for terminal voltage, with its three
+  parameters solved exactly through the datasheet anchors, plus a lagged current
+  for polarisation and an ohmic drop for sag.
+- **Arrhenius** temperature dependence on both internal resistance and the ramp
+  rate, joule and entropic heating, and Newton cooling — so a cold cell both sags
+  further and holds back more of its charge.
+- **CC–CV charging** with an exactly solved constant-voltage branch, a trickle
+  limit below freezing (lithium plating is real), and a thermal derate above
+  45 °C.
+
+Three chemistries ship with it: `liion`, `lfp` and `lead`, differing in how much
+of the car park is front bays and how quickly the ramp moves. Cycle between them
+with `n`.
+
+`c` charges, `d` drains, `r` rests, `+`/`-` change the load, `<`/`>` change the
+weather, and `f` winds the clock forward.
+
+`--report` skips the drawing and measures the cell instead, discharging it at a
+range of rates and fitting a Peukert exponent to the result:
+
+```
+$ battery --report --chem lead
+    rate    current   runtime  delivered  of rated    energy    mean V     end T
+   0.10C    0.720 A    8h 50m   6.365 Ah     88.4%  13.81 Wh   2.170 V   25.0 °C
+   1.00C    7.200 A   38m 46s   4.650 Ah     64.6%   9.54 Wh   2.052 V   25.7 °C
+   5.00C   36.000 A    0m 48s   0.470 Ah      6.5%   0.85 Wh   1.812 V   25.4 °C
+
+  Peukert exponent n = 1.478
+```
+
 ## Text
 
 ### markov

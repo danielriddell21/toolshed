@@ -7,6 +7,13 @@ before:
     - go mod tidy
 
 builds:
+  - id: battery
+    main: ./cmd/battery
+    binary: battery
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    ldflags: -s -w -X github.com/danielriddell21/toolshed/internal/buildinfo.Version={{ .Version }}
   - id: crabs
     main: ./cmd/crabs
     binary: crabs
@@ -124,9 +131,9 @@ brews:
     license: MIT
     commit_msg_template: "Brew formula update for toolshed {{ .Tag }}"
     install: |
-      bin.install "crabs", "duck", "fractal", "garden", "life", "markov", "maze", "sandbox", "snail", "turing"
+      bin.install "battery", "crabs", "duck", "fractal", "garden", "life", "markov", "maze", "sandbox", "snail", "turing"
       bin.install "fish" => "aquarium"
     test: |
-      %w[crabs duck fractal garden life markov maze sandbox snail turing aquarium].each do |cmd|
+      %w[battery crabs duck fractal garden life markov maze sandbox snail turing aquarium].each do |cmd|
         system "#{bin}/#{cmd}", "--version"
       end
