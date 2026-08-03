@@ -11,23 +11,67 @@ import (
 )
 
 const (
-	minBaysPerRow = 12
-	maxBaysPerRow = 44
+	minBaysPerRow = 10
+	maxBaysPerRow = 36
 	garageRows    = 6
 	carSpacing    = 4
 	panelColumn   = 30
 	gaugeWidth    = 14
 	laneReserve   = 24
-	bayCar        = "▄"
-	bayLine       = "▏"
-	bayFree       = " "
+	levelPad      = 4
+	bayCells      = 3
+	carBody       = "▄▄"
+	bayLine       = "╎"
+	bayFree       = "  "
+	deepDimming   = 0.5
 )
 
 var sparkRunes = []rune("▁▂▃▄▅▆▇█")
 
+// Cars are painted from a fixed set of colours so a bay always holds the same
+// car, which makes an arrival or a departure read as one vehicle moving rather
+// than a bar changing length. Deep-bay cars are dimmed: they are further away,
+// and they are not the ones that can leave.
+var carPaint = [][3]uint8{
+	{0xE2, 0xE8, 0xF0},
+	{0xEF, 0x44, 0x44},
+	{0x60, 0xA5, 0xFA},
+	{0x9C, 0xA3, 0xAF},
+	{0x34, 0xD3, 0x99},
+	{0xFB, 0xBF, 0x24},
+	{0xA7, 0x8B, 0xFA},
+	{0xF4, 0x72, 0xB6},
+	{0x38, 0xBD, 0xF8},
+	{0xCB, 0xD5, 0xE1},
+}
+
+var (
+	frontPaint = paintStyles(1)
+	deepPaint  = paintStyles(deepDimming)
+)
+
+func paintStyles(dim float64) []lipgloss.Style {
+	out := make([]lipgloss.Style, len(carPaint))
+	for i, c := range carPaint {
+		out[i] = lipgloss.NewStyle().Foreground(lipgloss.Color(fmt.Sprintf("#%02X%02X%02X",
+			uint8(float64(c[0])*dim), uint8(float64(c[1])*dim), uint8(float64(c[2])*dim))))
+	}
+	return out
+}
+
+func carStyle(bay int, deep bool) lipgloss.Style {
+	// A cheap odd multiplier scatters the colours so neighbouring bays rarely
+	// match, without needing to store a car per bay.
+	paint := frontPaint
+	if deep {
+		paint = deepPaint
+	}
+	return paint[(bay*7)%len(paint)]
+}
+
 var (
 	nearCars = lipgloss.NewStyle().Foreground(lipgloss.Color("#22C55E"))
-	deepCars = lipgloss.NewStyle().Foreground(lipgloss.Color("#15803D"))
+	moving   = lipgloss.NewStyle().Foreground(lipgloss.Color("#FDE047")).Bold(true)
 	inbound  = lipgloss.NewStyle().Foreground(lipgloss.Color("#38BDF8"))
 	vacant   = lipgloss.NewStyle().Foreground(lipgloss.Color("#39404E"))
 	concrete = lipgloss.NewStyle().Foreground(lipgloss.Color("#64748B"))
@@ -44,30 +88,45 @@ type garage struct {
 }
 
 func layout(width int, frontFraction float64) garage {
-	perRow := clampInt((width-8)/2, minBaysPerRow, maxBaysPerRow)
+	perRow := clampInt((width-levelPad-8)/bayCells, minBaysPerRow, maxBaysPerRow)
 	total := perRow * garageRows
 	front := clampInt(int(math.Round(float64(total)*frontFraction)), perRow, total-perRow)
 	return garage{perRow: perRow, front: front, deep: total - front}
 }
 
-func (g garage) inner() int { return g.perRow*2 + 2 }
+func (g garage) inner() int { return g.perRow*bayCells + 2 }
 
 func (g garage) rows(bays int) int { return (bays + g.perRow - 1) / g.perRow }
 
-// deck draws one block of bays, bottom row first, so cars visibly stack up
-// against the ramp end of the structure and the top floor is the one left half
-// empty.
-func (g garage) deck(bays int, fill float64, cars lipgloss.Style) []string {
+// deck draws one block of bays, bottom row first, so cars fill up against the
+// ramp end of the structure and the top level is the one left half empty. The
+// bay at the edge of the occupied run is the car currently arriving or leaving,
+// and is picked out so the movement is visible.
+func (g garage) deck(bays int, fill float64, baseLevel int, deep, busy bool) []string {
 	filled := clampInt(int(math.Round(float64(bays)*fill)), 0, bays)
-	out := make([]string, 0, g.rows(bays))
-	for row := g.rows(bays) - 1; row >= 0; row-- {
+	rows := g.rows(bays)
+	out := make([]string, 0, rows)
+
+	for row := rows - 1; row >= 0; row-- {
 		start := row * g.perRow
 		width := min(g.perRow, bays-start)
-		taken := clampInt(filled-start, 0, width)
-		line := cars.Render(strings.Repeat(bayCar+bayLine, taken)) +
-			vacant.Render(strings.Repeat(bayFree+bayLine, width-taken)) +
-			strings.Repeat(" ", (g.perRow-width)*2)
-		out = append(out, concrete.Render("│")+" "+line+" "+concrete.Render("│"))
+
+		var b strings.Builder
+		for bay := start; bay < start+width; bay++ {
+			switch {
+			case bay == filled-1 && busy:
+				b.WriteString(moving.Render(carBody))
+			case bay < filled:
+				b.WriteString(carStyle(bay, deep).Render(carBody))
+			default:
+				b.WriteString(bayFree)
+			}
+			b.WriteString(vacant.Render(bayLine))
+		}
+
+		out = append(out, concrete.Render(fmt.Sprintf("L%-2d ", baseLevel+row))+
+			concrete.Render("│")+" "+b.String()+
+			strings.Repeat(" ", (g.perRow-width)*bayCells)+" "+concrete.Render("│"))
 	}
 	return out
 }
@@ -76,22 +135,21 @@ func rule(width int, left, right, fill, text string) string {
 	if pad := width - lipgloss.Width(text); pad > 0 {
 		text += strings.Repeat(fill, pad)
 	}
-	return concrete.Render(left) + label.Render(text) + concrete.Render(right)
+	return strings.Repeat(" ", levelPad) +
+		concrete.Render(left) + label.Render(text) + concrete.Render(right)
 }
 
 func (m model) garageView(g garage) string {
 	cell := m.sim.Cell
-	near, deep := nearCars, deepCars
-	if m.sim.CurrentA < 0 {
-		near, deep = inbound, inbound
-	}
+	busy := m.sim.CurrentA != 0
+	frontRows := g.rows(g.front)
 
 	lines := make([]string, 0, garageRows+3)
 	lines = append(lines, rule(g.inner(), "╭", "╮", "─",
 		fmt.Sprintf("─ DEEP BAYS · %.3f Ah · a long walk from the ramp ", cell.DeepAh)))
-	lines = append(lines, g.deck(g.deep, cell.DeepAh/cell.DeepCapacityAh(), deep)...)
+	lines = append(lines, g.deck(g.deep, cell.DeepAh/cell.DeepCapacityAh(), frontRows+1, true, busy)...)
 	lines = append(lines, m.rampView(g))
-	lines = append(lines, g.deck(g.front, cell.SurfaceSoC(), near)...)
+	lines = append(lines, g.deck(g.front, cell.SurfaceSoC(), 1, false, busy)...)
 	lines = append(lines, rule(g.inner(), "╰", "╯", "─",
 		fmt.Sprintf("─ FRONT BAYS · %.3f Ah · ready to leave ", cell.FrontAh)))
 
@@ -119,7 +177,8 @@ func (m model) rampView(g garage) string {
 	if pad := g.inner() - lipgloss.Width(text); pad > 0 {
 		text += strings.Repeat("═", pad)
 	}
-	return concrete.Render("├") + warm.Render(text) + concrete.Render("┤")
+	return strings.Repeat(" ", levelPad) +
+		concrete.Render("├") + warm.Render(text) + concrete.Render("┤")
 }
 
 // laneView is the access road under the structure: cars stream out to the exit
@@ -139,7 +198,7 @@ func (m model) laneView(g garage) string {
 		gate = "barrier down"
 	}
 
-	return "   " + paint.Render(string(road)) + "  " +
+	return strings.Repeat(" ", levelPad+3) + paint.Render(string(road)) + "  " +
 		reading.Render(fmt.Sprintf("%.3f A", math.Abs(m.sim.CurrentA))) + " " + label.Render(gate)
 }
 

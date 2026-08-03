@@ -50,6 +50,12 @@ A cell charging and draining, drawn as the car park it behaves like.
 
 ![battery demo](img/battery.gif)
 
+Each bay holds one car, and a bay always holds the same car, so an arrival or a
+departure reads as a single vehicle moving rather than a bar changing length.
+The car on the edge of the occupied run — the one currently arriving or leaving —
+is picked out in yellow, and the deep-bay cars are dimmed because they are
+further away and are not the ones that can leave.
+
 The analogy is the model, not a decoration. Charge parks in bays. The **front
 bays** sit beside the ramp and can leave the instant you ask; the **deep bays**
 hold just as much charge but need time to reach the exit. Everything the tool
