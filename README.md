@@ -48,7 +48,7 @@ go build ./...
 | --- | --- |
 | `life` | Conway's Game of Life, seeded deterministically from a real directory tree — the same folder always grows the same way. |
 | `sandbox` | A physics sandbox. Drop balls into a box and watch them fall, bounce, collide, and settle. |
-| `battery` | A cell charging and draining, drawn as a multi-storey car park. Kinetic battery model, Shepherd voltage curve, Arrhenius thermals, and a Peukert report. |
+| `battery` | A cell charging and draining, drawn as a multi-storey car park you can orbit in 3D, with cars that drive themselves in and out. Kinetic battery model, Shepherd voltage curve, Arrhenius thermals, and a Peukert report. |
 
 ### Text
 
@@ -103,11 +103,13 @@ See [docs/demos.md](docs/demos.md) for recordings of each tool.
 A single Go module. Each tool is a thin `cmd/<name>` binary over a real,
 unit-tested engine in `internal/`:
 
-- `internal/render` — truecolor half-block framebuffer shared by `fractal`, `life`, `sandbox`.
+- `internal/render` — truecolor framebuffer shared by `fractal`, `life`, `sandbox`, `battery`; half-block or quadrant output, plus box-filter downsampling for anti-aliasing.
+- `internal/scene` — small software 3D rasteriser: perspective camera, depth buffer, flat-shaded boxes, and a camera that frames a subject by itself.
 - `internal/palette` — float→RGB gradients shared by `fractal` and `turing`.
 - `internal/grid` — generic toroidal grid shared by `life` and `turing`.
 - `internal/fractal`, `internal/grayscott`, `internal/maze`, `internal/markov`,
-  `internal/life`, `internal/physics`, `internal/battery` — the per-tool engines.
+  `internal/life`, `internal/physics`, `internal/battery`, `internal/carpark` — the
+  per-tool engines.
 - `internal/anim`, `internal/sprite`, `internal/style` — the Bubble Tea + Lipgloss
   helpers behind the ambient toys.
 

@@ -202,14 +202,14 @@ func (m model) laneView(g garage) string {
 		reading.Render(fmt.Sprintf("%.3f A", math.Abs(m.sim.CurrentA))) + " " + label.Render(gate)
 }
 
-func (m model) panelView(g garage) string {
+func (m model) panelView(width int) string {
 	cell := m.sim.Cell
 	temp := reading
 	if cell.TempC() > 45 {
 		temp = warm
 	}
 
-	sparkCells := clampInt(g.inner()/4, 8, 16)
+	sparkCells := clampInt(width/4, 8, 16)
 	rows := [][]string{{
 		stat("charge", gauge(cell.SoC(), gaugeWidth)+fmt.Sprintf(" %.1f%%", 100*cell.SoC())),
 		stat("front bays", fmt.Sprintf("%.1f%%", 100*cell.SurfaceSoC())),
@@ -327,8 +327,13 @@ func (m model) helpView() string {
 	if m.paused {
 		pause = "space resume"
 	}
-	return style.Help.Render("  c charge  d drain  r rest  n cell  +/- load  [/] charge  " +
-		"</> ambient  f speed  " + pause + "  q quit")
+	keys := "  c charge  d drain  r rest  n cell  +/- load  [/] charge  </> ambient  f speed  " +
+		pause + "  v view  q quit"
+	if m.solid {
+		keys = "  c charge  d drain  r rest  n cell  +/- load  </> ambient  f speed  " +
+			"arrows orbit  z/x zoom  o spin  v flat  q quit"
+	}
+	return style.Help.Render(keys)
 }
 
 func clampInt(v, lo, hi int) int { return max(lo, min(hi, v)) }

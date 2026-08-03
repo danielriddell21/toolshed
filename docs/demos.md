@@ -50,11 +50,27 @@ A cell charging and draining, drawn as the car park it behaves like.
 
 ![battery demo](img/battery.gif)
 
-Each bay holds one car, and a bay always holds the same car, so an arrival or a
-departure reads as a single vehicle moving rather than a bar changing length.
-The car on the edge of the occupied run — the one currently arriving or leaving —
-is picked out in yellow, and the deep-bay cars are dimmed because they are
-further away and are not the ones that can leave.
+It opens on the structure itself, drawn in 3D and turning slowly. Cars drive in
+from the entrance, up the ramps and into a bay; when the cell is discharging they
+reverse out and leave. Arrows orbit the camera, `z`/`x` zoom, `o` stops the spin,
+and `v` switches to a flat instrument view of the same two wells for when you
+want to read the numbers rather than watch the traffic.
+
+The traffic is a simulation in its own right. Cars follow their route by pure
+pursuit, steering at a point further along the path so they swing through turns
+instead of pivoting, and they keep station with the Intelligent Driver Model
+(Treiber, Hennecke & Helbing, 2000), which is what makes them queue on the ramp
+and come to rest exactly on a bay. The aisle is two-way, with arrivals and
+departures in opposite lanes. The battery model is always the authority: cars are
+dispatched to make the structure agree with the charge the cell actually holds,
+so the traffic on the ramp is the diffusion between the two wells made visible.
+Wind the clock forward far enough and the bays settle directly, because nobody
+can drive at 240x.
+
+In the flat view each bay holds one car, and a bay always holds the same car, so
+an arrival or a departure reads as a single vehicle moving rather than a bar
+changing length. Deep-bay cars are dimmed because they are further away and are
+not the ones that can leave.
 
 The analogy is the model, not a decoration. Charge parks in bays. The **front
 bays** sit beside the ramp and can leave the instant you ask; the **deep bays**

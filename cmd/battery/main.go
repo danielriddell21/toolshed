@@ -11,21 +11,28 @@ import (
 
 	"github.com/danielriddell21/toolshed/internal/anim"
 	"github.com/danielriddell21/toolshed/internal/battery"
+	"github.com/danielriddell21/toolshed/internal/carpark"
 	"github.com/danielriddell21/toolshed/internal/cli"
+	"github.com/danielriddell21/toolshed/internal/render"
+	"github.com/danielriddell21/toolshed/internal/scene"
 )
 
 const (
-	fps        = 20
-	maxStepS   = 1.0
-	maxFrameS  = 0.25
-	history    = 400
-	rateStep   = 0.25
-	minCRate   = 0.05
-	maxCRate   = 10
-	tempStep   = 5
-	minAmbient = -20
-	maxAmbient = 55
-	kelvin     = 273.15
+	fps          = 20
+	maxStepS     = 1.0
+	maxFrameS    = 0.25
+	history      = 400
+	rateStep     = 0.25
+	minCRate     = 0.05
+	maxCRate     = 10
+	tempStep     = 5
+	minAmbient   = -20
+	maxAmbient   = 55
+	kelvin       = 273.15
+	sceneChrome  = 10
+	orbitStep    = 0.18
+	zoomStep     = 0.12
+	maxDriveGain = 6.0
 )
 
 var speeds = []float64{1, 10, 60, 300, 900, 3600}
@@ -39,6 +46,42 @@ type model struct {
 	lane   float64
 	volts  []float64
 	amps   []float64
+
+	park     *carpark.Park
+	frame    *render.Frame
+	hires    *render.Frame
+	target   *scene.Target
+	solid    bool
+	spin     bool
+	camYaw   float64
+	camPitch float64
+	camZoom  float64
+}
+
+func newModel(sim *battery.Sim, speed float64, solid bool) model {
+	frame := render.NewFrame(2, 2)
+	hires := render.NewFrame(2, 2)
+	target := scene.NewTarget(hires)
+	target.PixelAspect = pixelAspect
+	m := model{
+		sim:      sim,
+		speed:    speed,
+		solid:    solid,
+		spin:     true,
+		frame:    frame,
+		hires:    hires,
+		target:   target,
+		camYaw:   -0.85,
+		camPitch: 0.24,
+		camZoom:  1.04,
+	}
+	m.rebuildPark()
+	return m
+}
+
+func (m *model) rebuildPark() {
+	m.park = carpark.New(deckLevels, deckPerSide, m.sim.Cell.Chem.FrontFraction)
+	m.park.Sync(m.sim.Cell.SurfaceSoC(), m.sim.Cell.DeepAh/m.sim.Cell.DeepCapacityAh())
 }
 
 func (m model) Init() tea.Cmd { return anim.Frames(fps) }
@@ -87,8 +130,31 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.speed = nextSpeed(m.speed)
 	case "n":
 		m.reset(nextChemistry(m.sim.Cell.Chem.Name))
+	default:
+		m.handleCamera(msg.String())
 	}
 	return m, nil
+}
+
+func (m *model) handleCamera(key string) {
+	switch key {
+	case "v":
+		m.solid = !m.solid
+	case "o":
+		m.spin = !m.spin
+	case "left":
+		m.orbit(-orbitStep, 0, 0)
+	case "right":
+		m.orbit(orbitStep, 0, 0)
+	case "up":
+		m.orbit(0, orbitStep/2, 0)
+	case "down":
+		m.orbit(0, -orbitStep/2, 0)
+	case "z":
+		m.orbit(0, 0, zoomStep)
+	case "x":
+		m.orbit(0, 0, -zoomStep)
+	}
 }
 
 // reset swaps in another chemistry and starts it full, keeping the load, the
@@ -99,6 +165,7 @@ func (m *model) reset(chem battery.Chemistry) {
 	sim.SetMode(m.sim.Mode)
 	m.sim = sim
 	m.volts, m.amps = nil, nil
+	m.rebuildPark()
 }
 
 func nextChemistry(current string) battery.Chemistry {
@@ -141,6 +208,14 @@ func (m *model) advance(now time.Time) {
 	m.lane += math.Abs(m.sim.CurrentA)/m.sim.Cell.Chem.CapacityAh + 0.2
 	m.volts = push(m.volts, m.sim.Cell.Terminal(m.sim.CurrentA))
 	m.amps = push(m.amps, m.sim.CurrentA)
+
+	// Traffic runs close to real time whatever the clock is doing: cars cannot
+	// drive at 240x, so winding forward settles bays directly instead.
+	m.park.Sync(m.sim.Cell.SurfaceSoC(), m.sim.Cell.DeepAh/m.sim.Cell.DeepCapacityAh())
+	m.park.Step(math.Min(elapsed, maxFrameS) * math.Max(1, math.Min(maxDriveGain, m.speed/60)))
+	if m.spin {
+		m.camYaw += spinRate * elapsed
+	}
 }
 
 func push(series []float64, v float64) []float64 {
@@ -156,17 +231,13 @@ func (m model) View() string {
 		return "Opening the car park...\n"
 	}
 	g := layout(m.Width, m.sim.Cell.Chem.FrontFraction)
-	return strings.Join([]string{
-		m.headerView(),
-		m.settingsView(),
-		"",
-		m.garageView(g),
-		m.laneView(g),
-		"",
-		m.panelView(g),
-		"",
-		m.helpView(),
-	}, "\n")
+	parts := []string{m.headerView(), m.settingsView(), ""}
+	if m.solid {
+		parts = append(parts, m.sceneView(m.Height-sceneChrome))
+	} else {
+		parts = append(parts, m.garageView(g), m.laneView(g))
+	}
+	return strings.Join(append(parts, "", m.panelView(g.inner()), "", m.helpView()), "\n")
 }
 
 func clampRate(v float64) float64 {
@@ -279,6 +350,7 @@ func main() {
 		charge   float64
 		speed    float64
 		modeName string
+		flat     bool
 		asReport bool
 	)
 
@@ -307,7 +379,7 @@ func main() {
 
 			sim := battery.NewSim(chem, soc, ambient+kelvin, clampRate(charge), clampRate(load))
 			sim.SetMode(mode)
-			m := model{sim: sim, speed: speed}
+			m := newModel(sim, speed, !flat)
 			if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
 				return fmt.Errorf("run program: %w", err)
 			}
@@ -323,6 +395,8 @@ func main() {
 	root.Flags().Float64Var(&charge, "charge", 1, "charge rate (C)")
 	root.Flags().Float64Var(&speed, "speed", 60, "simulated seconds per real second")
 	root.Flags().StringVar(&modeName, "mode", "drain", "starting mode (rest, charge, drain)")
+	root.Flags().BoolVar(&flat, "flat", false,
+		"draw the flat instrument view instead of the 3D structure")
 	root.Flags().BoolVar(&asReport, "report", false,
 		"print a rate-capacity table and Peukert exponent instead of running the demo")
 
