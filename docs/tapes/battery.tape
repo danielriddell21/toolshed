@@ -12,7 +12,6 @@ Type "battery --load 2 --speed 60" Sleep 500ms
 Enter
 Sleep 6s
 Type "o" Sleep 7s
-Type "c" Sleep 9s
-Type "v" Sleep 4s
+Type "c" Sleep 11s
 Type "q"
 Sleep 500ms

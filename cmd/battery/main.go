@@ -29,7 +29,7 @@ const (
 	minAmbient   = -20
 	maxAmbient   = 55
 	kelvin       = 273.15
-	sceneChrome  = 10
+	sceneChrome  = 11
 	orbitStep    = 0.18
 	zoomStep     = 0.12
 	maxDriveGain = 6.0
@@ -43,7 +43,6 @@ type model struct {
 	speed  float64
 	paused bool
 	last   time.Time
-	lane   float64
 	volts  []float64
 	amps   []float64
 
@@ -51,14 +50,13 @@ type model struct {
 	frame    *render.Frame
 	hires    *render.Frame
 	target   *scene.Target
-	solid    bool
 	spin     bool
 	camYaw   float64
 	camPitch float64
 	camZoom  float64
 }
 
-func newModel(sim *battery.Sim, speed float64, solid bool) model {
+func newModel(sim *battery.Sim, speed float64) model {
 	frame := render.NewFrame(2, 2)
 	hires := render.NewFrame(2, 2)
 	target := scene.NewTarget(hires)
@@ -66,7 +64,6 @@ func newModel(sim *battery.Sim, speed float64, solid bool) model {
 	m := model{
 		sim:      sim,
 		speed:    speed,
-		solid:    solid,
 		spin:     true,
 		frame:    frame,
 		hires:    hires,
@@ -138,8 +135,6 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m *model) handleCamera(key string) {
 	switch key {
-	case "v":
-		m.solid = !m.solid
 	case "o":
 		m.spin = !m.spin
 	case "left":
@@ -205,7 +200,6 @@ func (m *model) advance(now time.Time) {
 		remaining -= step
 	}
 
-	m.lane += math.Abs(m.sim.CurrentA)/m.sim.Cell.Chem.CapacityAh + 0.2
 	m.volts = push(m.volts, m.sim.Cell.Terminal(m.sim.CurrentA))
 	m.amps = push(m.amps, m.sim.CurrentA)
 
@@ -230,14 +224,16 @@ func (m model) View() string {
 	if !m.Ready() {
 		return "Opening the car park...\n"
 	}
-	g := layout(m.Width, m.sim.Cell.Chem.FrontFraction)
-	parts := []string{m.headerView(), m.settingsView(), ""}
-	if m.solid {
-		parts = append(parts, m.sceneView(m.Height-sceneChrome))
-	} else {
-		parts = append(parts, m.garageView(g), m.laneView(g))
-	}
-	return strings.Join(append(parts, "", m.panelView(g.inner()), "", m.helpView()), "\n")
+	return strings.Join([]string{
+		m.headerView(),
+		m.settingsView(),
+		"",
+		m.sceneView(m.Height - sceneChrome),
+		"",
+		m.panelView(m.Width),
+		"",
+		m.helpView(),
+	}, "\n")
 }
 
 func clampRate(v float64) float64 {
@@ -350,7 +346,6 @@ func main() {
 		charge   float64
 		speed    float64
 		modeName string
-		flat     bool
 		asReport bool
 	)
 
@@ -379,7 +374,7 @@ func main() {
 
 			sim := battery.NewSim(chem, soc, ambient+kelvin, clampRate(charge), clampRate(load))
 			sim.SetMode(mode)
-			m := newModel(sim, speed, !flat)
+			m := newModel(sim, speed)
 			if _, err := tea.NewProgram(m, tea.WithAltScreen()).Run(); err != nil {
 				return fmt.Errorf("run program: %w", err)
 			}
@@ -395,8 +390,6 @@ func main() {
 	root.Flags().Float64Var(&charge, "charge", 1, "charge rate (C)")
 	root.Flags().Float64Var(&speed, "speed", 60, "simulated seconds per real second")
 	root.Flags().StringVar(&modeName, "mode", "drain", "starting mode (rest, charge, drain)")
-	root.Flags().BoolVar(&flat, "flat", false,
-		"draw the flat instrument view instead of the 3D structure")
 	root.Flags().BoolVar(&asReport, "report", false,
 		"print a rate-capacity table and Peukert exponent instead of running the demo")
 

@@ -50,11 +50,11 @@ A cell charging and draining, drawn as the car park it behaves like.
 
 ![battery demo](img/battery.gif)
 
-It opens on the structure itself, drawn in 3D and turning slowly. Cars drive in
-from the entrance, up the ramps and into a bay; when the cell is discharging they
-reverse out and leave. Arrows orbit the camera, `z`/`x` zoom, `o` stops the spin,
-and `v` switches to a flat instrument view of the same two wells for when you
-want to read the numbers rather than watch the traffic.
+The structure is drawn in 3D and turns slowly. Cars drive in from the entrance,
+up the ramps and into a bay; when the cell is discharging they reverse out and
+leave. Arrows orbit the camera, `z`/`x` zoom, and `o` stops the spin. The panel
+underneath carries the numbers: state of charge against how full the front bays
+are, terminal voltage against rested voltage, temperature, and the traces.
 
 The traffic is a simulation in its own right. Cars follow their route by pure
 pursuit, steering at a point further along the path so they swing through turns
@@ -67,10 +67,10 @@ so the traffic on the ramp is the diffusion between the two wells made visible.
 Wind the clock forward far enough and the bays settle directly, because nobody
 can drive at 240x.
 
-In the flat view each bay holds one car, and a bay always holds the same car, so
-an arrival or a departure reads as a single vehicle moving rather than a bar
-changing length. Deep-bay cars are dimmed because they are further away and are
-not the ones that can leave.
+Every bay holds one car, and a bay always holds the same car, so an arrival or a
+departure reads as a single vehicle moving rather than a count going up and down.
+Cars in the deep bays are painted darker: they are further away, and they are not
+the ones that can leave.
 
 The analogy is the model, not a decoration. Charge parks in bays. The **front
 bays** sit beside the ramp and can leave the instant you ask; the **deep bays**
