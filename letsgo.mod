@@ -9,7 +9,7 @@
 // Pinned by the digest of the released linux/amd64 binary, which is what the
 // release runner installs: a program that decides what gets built is a build
 // input exactly as the compiler is.
-plugin archive-layout letsgo-multi v0.2.0 sha256:764a30483bd83f5f53074f9af9a3bb46b1893ec07cdeb61b5edef6b9698984be
+plugin archive-layout letsgo-multi v0.3.0 sha256:2ca5d809728ced080bee720de698ba7b03be4a7cc633603259a445f87ecee8c2
 
 // The six targets the GoReleaser config built for every command.
 build (
