@@ -1,6 +1,6 @@
 module github.com/danielriddell21/toolshed
 
-go 1.26.6
+go 1.27.1
 
 require (
 	github.com/charmbracelet/bubbletea v1.3.10
