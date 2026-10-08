@@ -26,8 +26,3 @@ build (
 version github.com/danielriddell21/toolshed/internal/buildinfo.Version
 
 brew danielriddell21/tap
-
-// The shared GoReleaser workflow marked releases as pre-releases after
-// publishing; letsgo does it while publishing, so promote.yaml still fires on
-// manual promotion.
-release prerelease=true
